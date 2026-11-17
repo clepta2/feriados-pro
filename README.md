@@ -19,7 +19,17 @@
 6. **Feriados prolongados**: identifica fins de semana de 3 dias e "pontes" possíveis.
 7. **Calendário iCalendar (RFC 5545)** para assinar no Google Agenda, Outlook ou Apple.
 
-> ⚠️ Feriados municipais fora das capitais cadastradas e decretos extraordinários não são cobertos. Use `GET /api/feriados/cobertura` para ver a base.
+## ⚠️ Status dos dados
+
+| Dado | Status |
+|---|---|
+| Feriados nacionais fixos (Lei 662/1949, 6.802/1980, 14.759/2023) | Conforme a legislação federal citada |
+| Datas móveis (Páscoa, Carnaval, Sexta-feira Santa, Corpus Christi) | Calculadas por algoritmo; conferidas por testes com datas de Páscoa conhecidas |
+| **Feriados estaduais (27 UFs)** | **NÃO verificados** com a legislação de cada UF. Cada item sai com `verificado: false` |
+| **Feriados municipais (14 capitais)** | **NÃO verificados** com a legislação municipal. Cada item sai com `verificado: false` |
+| Calendário bancário (ANBIMA) | Segue a regra de Carnaval e Corpus Christi; **não** foi comparado com a tabela publicada pela ANBIMA |
+
+Quando a resposta inclui feriados estaduais ou municipais, a API devolve o campo `aviso`. Não use esses dados para decisões legais ou financeiras sem confirmar na fonte oficial. Decretos extraordinários e feriados de outros municípios não são cobertos. Use `GET /api/feriados/cobertura` para ver a base.
 
 ---
 

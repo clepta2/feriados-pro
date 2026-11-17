@@ -14,6 +14,7 @@ import {
   feriadosProlongados,
   gerarIcs,
   listarCobertura,
+  AVISO_DADOS_NAO_VERIFICADOS,
   hojeBrasilia,
   toIso
 } from './feriados-engine.js';
@@ -148,7 +149,7 @@ export default {
         }, 200, rh);
       }
 
-      if (path === '/api/feriados/cobertura') return json(listarCobertura(), 200, rh);
+      if (path === '/api/feriados/cobertura') return json({ ...listarCobertura(), aviso: AVISO_DADOS_NAO_VERIFICADOS }, 200, rh);
 
       if (path === '/api/feriados/hoje') return json(consultarData(hojeBrasilia(), op), 200, rh);
 
@@ -200,6 +201,7 @@ export default {
           ibge: op.ibge || null,
           total: feriados.length,
           totalFeriados: feriados.filter(f => f.tipo === 'feriado').length,
+          ...(feriados.some(f => f.verificado === false) ? { aviso: AVISO_DADOS_NAO_VERIFICADOS } : {}),
           feriados
         }, 200, { ...rh, 'Cache-Control': 'public, max-age=3600' });
       }

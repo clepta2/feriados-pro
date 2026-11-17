@@ -12,6 +12,9 @@
 const DIA_MS = 86400000;
 const NOMES_DIA_SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 
+/** Aviso exibido pela API sempre que a resposta inclui feriados estaduais ou municipais. */
+export const AVISO_DADOS_NAO_VERIFICADOS = 'Feriados estaduais e municipais ainda NÃO foram conferidos com a legislação oficial de cada UF/município. Não use para decisões legais ou financeiras sem confirmar na fonte oficial. Os feriados nacionais seguem a legislação federal.';
+
 export const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
 
 // Feriados nacionais fixos (Lei 662/1949, Lei 6.802/1980, Lei 10.607/2002, Lei 14.759/2023)
@@ -288,14 +291,14 @@ export function listarFeriados(ano, opcoes = {}) {
 
   if (uf) {
     for (const f of FERIADOS_ESTADUAIS[uf] || []) {
-      lista.push(montarItem(parseData(`${y}-${f.mmdd}`), f.nome, 'feriado', 'estadual', { uf }));
+      lista.push(montarItem(parseData(`${y}-${f.mmdd}`), f.nome, 'feriado', 'estadual', { uf, verificado: false }));
     }
   }
 
   if (municipio) {
     for (const f of municipio.feriados) {
       const dt = f.pascoa !== undefined ? addDias(pascoa, f.pascoa) : parseData(`${y}-${f.mmdd}`);
-      lista.push(montarItem(dt, f.nome, 'feriado', 'municipal', { ibge, cidade: municipio.cidade, uf: municipio.uf, movel: f.pascoa !== undefined || undefined }));
+      lista.push(montarItem(dt, f.nome, 'feriado', 'municipal', { ibge, cidade: municipio.cidade, uf: municipio.uf, movel: f.pascoa !== undefined || undefined, verificado: false }));
     }
   }
 
@@ -490,7 +493,7 @@ export function gerarIcs(ano, opcoes = {}) {
       `DTSTART;VALUE=DATE:${ini}`,
       `DTEND;VALUE=DATE:${fim}`,
       `SUMMARY:${escaparIcs(f.nome)}`,
-      `DESCRIPTION:${escaparIcs(`${f.tipo === 'feriado' ? 'Feriado' : 'Ponto facultativo'} ${f.abrangencia}`)}`,
+      `DESCRIPTION:${escaparIcs(`${f.tipo === 'feriado' ? 'Feriado' : 'Ponto facultativo'} ${f.abrangencia}${f.verificado === false ? ' (não verificado com a legislação oficial)' : ''}`)}`,
       'TRANSP:TRANSPARENT',
       'END:VEVENT'
     );
@@ -522,6 +525,7 @@ export const FeriadosEngine = {
   feriadosProlongados,
   gerarIcs,
   listarCobertura,
+  AVISO_DADOS_NAO_VERIFICADOS,
   hojeBrasilia,
   parseData,
   toIso

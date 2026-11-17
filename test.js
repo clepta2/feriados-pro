@@ -60,6 +60,16 @@ await t('Feriado estadual SP (9 de julho) e municipal SP (25 de janeiro)', () =>
   assert.ok(f.some(x => x.data === '2026-01-25' && x.abrangencia === 'municipal'));
 });
 
+await t('Feriados estaduais e municipais saem marcados como não verificados, com aviso na API', async () => {
+  const f = listarFeriados(2026, { ibge: '3550308' });
+  assert.ok(f.filter(x => x.abrangencia !== 'nacional' && x.tipo === 'feriado').every(x => x.verificado === false));
+  assert.ok(f.filter(x => x.abrangencia === 'nacional').every(x => x.verificado === undefined));
+  const comEstadual = (await call('/api/feriados/2026?uf=SP')).body;
+  assert.ok(comEstadual.aviso && /NÃO foram conferidos/.test(comEstadual.aviso));
+  assert.equal((await call('/api/feriados/2026')).body.aviso, undefined);
+  assert.ok((await call('/api/feriados/cobertura')).body.aviso);
+});
+
 await t('Dia útil civil x bancário (Carnaval)', () => {
   assert.equal(consultarData('2026-02-16').diaUtil, true);
   assert.equal(consultarData('2026-02-16', { modo: 'bancario' }).diaUtil, false);

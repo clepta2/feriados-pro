@@ -80,6 +80,7 @@
           <label style="font-size:13px;display:flex;align-items:center;gap:6px;flex:0 0 auto;"><input type="checkbox" id="facultativos" checked> Incluir pontos facultativos</label>
           <button class="ponte-btn ponte-btn-secondary ponte-btn-sm" id="btn-ics" style="flex:0 0 auto;">⬇ Baixar .ics</button>
         </div>
+        <div id="aviso" class="fer-result" role="note" hidden style="margin:0 0 10px;border-color:#f59e0b;color:#f59e0b;">⚠ Feriados estaduais e municipais ainda não foram conferidos com a legislação oficial. Confirme na fonte oficial antes de decidir prazos legais ou financeiros.</div>
         <div id="lista" class="fer-list"></div>
       </div>
 
@@ -160,6 +161,7 @@
             <div>${esc(f.nome)}<small>${f.diaSemana}${f.lei ? ' • ' + esc(f.lei) : ''}</small></div>
             ${tagDe(f)}
           </div>`).join('');
+        $('aviso').hidden = !lista.some(f => f.verificado === false);
         $('json').textContent = JSON.stringify({ ok: true, ano, ...opcoes(), total: lista.length, feriados: lista }, null, 2);
         const prol = F.feriadosProlongados(ano, opcoes()).prolongados;
         $('prolongados').innerHTML = prol.length ? prol.map(p => `
