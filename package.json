@@ -1,0 +1,33 @@
+{
+  "name": "feriados-pro",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "API e SDK Oficial de Feriados Nacionais, Estaduais e Municipais do Brasil, Dias Úteis (Civil e Bancário ANBIMA), Prazos, Feriados Prolongados e Calendário .ics na borda Cloudflare Anycast (<2ms).",
+  "main": "feriados-pro.js",
+  "module": "feriados-pro.js",
+  "scripts": {
+    "test": "node test.js",
+    "deploy": "wrangler deploy",
+    "security:check": "node scripts/security-guard.js"
+  },
+  "keywords": [
+    "feriados",
+    "dias-uteis",
+    "calendario",
+    "anbima",
+    "dia-util-bancario",
+    "prazo",
+    "vencimento",
+    "pascoa",
+    "ics",
+    "cloudflare-worker",
+    "anycast",
+    "sdk"
+  ],
+  "author": "clepta2 <clepta2@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clepta2/feriados-pro.git"
+  }
+}

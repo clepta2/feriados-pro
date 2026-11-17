@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feriados &amp; Dias Úteis Pro Studio — Calendário Nacional, Estadual, Municipal e Bancário</title>
+  <meta name="description" content="Feriados nacionais, estaduais e municipais, contagem de dias úteis, prazos bancários ANBIMA e calendário .ics na borda Cloudflare Anycast.">
+  <link rel="stylesheet" href="ponte-suite.css">
+  <style>
+    .fer-list { display: flex; flex-direction: column; gap: 6px; max-height: 460px; overflow-y: auto; }
+    .fer-item { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 12px; border-radius: var(--radius-md); background: var(--paper-elevated); border: 1px solid var(--line-light); font-size: 13px; }
+    .fer-item time { font-family: var(--font-mono); font-weight: 700; color: var(--ink); }
+    .fer-item small { color: var(--muted); display: block; font-size: 11.5px; }
+    .fer-tag { font-size: 10px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; padding: 3px 7px; border-radius: var(--radius-full); white-space: nowrap; }
+    .fer-tag.nacional { background: rgba(16,185,129,.15); color: #10b981; }
+    .fer-tag.estadual { background: rgba(59,130,246,.15); color: #3b82f6; }
+    .fer-tag.municipal { background: rgba(168,85,247,.15); color: #a855f7; }
+    .fer-tag.facultativo { background: rgba(245,158,11,.15); color: #f59e0b; }
+    .fer-result { margin-top: 14px; padding: 14px 16px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--paper-elevated); font-size: 13.5px; line-height: 1.6; }
+    .fer-big { font-family: var(--font-mono); font-size: 26px; font-weight: 800; color: #10b981; }
+    .fer-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .fer-row > * { flex: 1; min-width: 140px; }
+    pre.fer-json { background: #030712; color: #a5f3fc; padding: 14px; border-radius: 8px; font-family: var(--font-mono); font-size: 12px; max-height: 300px; overflow: auto; white-space: pre-wrap; }
+  </style>
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('ponte.theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
+</head>
+<body>
+  <header class="ponte-header">
+    <div class="ponte-header-inner">
+      <div class="ponte-brand-block">
+        <a class="ponte-brand" href="https://ponte-marketplace.maputo2.workers.dev/#catalogo">
+          <svg class="ponte-brand-logo" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="#10b981"/>
+            <path d="M12 28V12L28 20L12 28Z" fill="#0c1715"/>
+          </svg>
+          <div class="ponte-brand-copy">
+            <strong>ponte</strong>
+            <small>FERIADOS PRO · OZPRO</small>
+          </div>
+        </a>
+        <div class="ponte-breadcrumb">
+          <a href="https://ponte-marketplace.maputo2.workers.dev/#catalogo">Workspace</a>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+          <strong>Feriados &amp; Dias Úteis Pro</strong>
+        </div>
+      </div>
+      <div class="ponte-topbar-actions">
+        <span class="ponte-status-edge"><span class="ponte-status-dot"></span> Cloudflare Anycast &lt;2ms</span>
+        <button class="ponte-theme-btn" id="theme-toggle-btn" aria-label="Alternar tema">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="ponte-container">
+    <div class="ponte-hero">
+      <div class="ponte-badges-bar">
+        <span class="ponte-badge mint">● 27 UFs + Capitais</span>
+        <span class="ponte-badge blue">🏦 Calendário Bancário ANBIMA</span>
+        <span class="ponte-badge purple">📅 Exportação .ics</span>
+        <span class="ponte-badge amber">⚡ 100% Offline</span>
+      </div>
+      <h1>Feriados &amp; Dias Úteis Pro Studio</h1>
+      <p>Feriados nacionais, estaduais e municipais com datas móveis calculadas pela Páscoa, contagem de dias úteis, vencimentos e prazos (civil ou bancário), feriados prolongados e calendário pronto para Google Agenda e Outlook.</p>
+    </div>
+
+    <div class="ponte-grid-2" style="align-items:start;">
+      <div class="ponte-card">
+        <div class="ponte-card-title"><h3>Calendário de Feriados</h3></div>
+        <div class="fer-row">
+          <input type="number" id="ano" class="ponte-input" value="2026" min="1900" max="2199" aria-label="Ano">
+          <select id="uf" class="ponte-select" aria-label="UF"><option value="">Somente nacionais</option></select>
+          <select id="ibge" class="ponte-select" aria-label="Município"><option value="">Sem município</option></select>
+        </div>
+        <div class="fer-row">
+          <label style="font-size:13px;display:flex;align-items:center;gap:6px;flex:0 0 auto;"><input type="checkbox" id="facultativos" checked> Incluir pontos facultativos</label>
+          <button class="ponte-btn ponte-btn-secondary ponte-btn-sm" id="btn-ics" style="flex:0 0 auto;">⬇ Baixar .ics</button>
+        </div>
+        <div id="lista" class="fer-list"></div>
+      </div>
+
+      <div>
+        <div class="ponte-card">
+          <div class="ponte-card-title"><h3>Esta data é dia útil?</h3></div>
+          <div class="fer-row">
+            <input type="date" id="data-consulta" class="ponte-input" aria-label="Data">
+            <select id="modo-consulta" class="ponte-select" aria-label="Modo"><option value="civil">Civil</option><option value="bancario">Bancário (ANBIMA)</option></select>
+            <button class="ponte-btn" id="btn-consulta" style="flex:0 0 auto;">Consultar</button>
+          </div>
+          <div id="res-consulta" class="fer-result"></div>
+        </div>
+
+        <div class="ponte-card" style="margin-top:16px;">
+          <div class="ponte-card-title"><h3>Prazo / Vencimento em dias úteis</h3></div>
+          <div class="fer-row">
+            <input type="date" id="data-prazo" class="ponte-input" aria-label="Data inicial">
+            <input type="number" id="dias-prazo" class="ponte-input" value="15" aria-label="Dias úteis">
+            <select id="modo-prazo" class="ponte-select" aria-label="Modo"><option value="civil">Civil</option><option value="bancario">Bancário</option></select>
+            <button class="ponte-btn" id="btn-prazo" style="flex:0 0 auto;">Calcular</button>
+          </div>
+          <div id="res-prazo" class="fer-result"></div>
+        </div>
+
+        <div class="ponte-card" style="margin-top:16px;">
+          <div class="ponte-card-title"><h3>Dias úteis entre duas datas</h3></div>
+          <div class="fer-row">
+            <input type="date" id="ini-contar" class="ponte-input" aria-label="Início">
+            <input type="date" id="fim-contar" class="ponte-input" aria-label="Fim">
+            <button class="ponte-btn" id="btn-contar" style="flex:0 0 auto;">Contar</button>
+          </div>
+          <div id="res-contar" class="fer-result"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ponte-card" style="margin-top:16px;">
+      <div class="ponte-card-title"><h3>Feriados prolongados &amp; pontes</h3></div>
+      <div id="prolongados" class="ponte-grid-3"></div>
+    </div>
+
+    <div class="ponte-card" style="margin-top:16px;">
+      <div class="ponte-card-title"><h3>Payload JSON (GET /api/feriados/:ano)</h3></div>
+      <pre id="json" class="fer-json"></pre>
+    </div>
+  </main>
+
+  <script type="module">
+    import { FeriadosEngine as F } from './feriados-engine.js';
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const br = iso => iso.split('-').reverse().join('/');
+    const hoje = F.toIso(F.hojeBrasilia());
+
+    F.UFS.forEach(uf => $('uf').insertAdjacentHTML('beforeend', `<option value="${uf}">${uf}</option>`));
+    Object.entries(F.FERIADOS_MUNICIPAIS).forEach(([ibge, m]) => $('ibge').insertAdjacentHTML('beforeend', `<option value="${ibge}" data-uf="${m.uf}">${esc(m.cidade)} (${m.uf})</option>`));
+    ['data-consulta', 'data-prazo', 'ini-contar'].forEach(id => $(id).value = hoje);
+    $('fim-contar').value = `${hoje.slice(0, 4)}-12-31`;
+    $('ano').value = hoje.slice(0, 4);
+
+    const opcoes = () => ({ uf: $('uf').value || undefined, ibge: $('ibge').value || undefined });
+
+    function tagDe(f) {
+      if (f.tipo === 'data_comemorativa') return '<span class="fer-tag" style="background:var(--line-light);color:var(--muted)">data</span>';
+      if (f.tipo !== 'feriado') return '<span class="fer-tag facultativo">facult.</span>';
+      return `<span class="fer-tag ${f.abrangencia}">${f.abrangencia}</span>`;
+    }
+
+    function renderLista() {
+      try {
+        const ano = Number($('ano').value);
+        const lista = F.listarFeriados(ano, { ...opcoes(), incluirFacultativos: $('facultativos').checked });
+        $('lista').innerHTML = lista.map(f => `
+          <div class="fer-item">
+            <time datetime="${f.data}">${br(f.data)}</time>
+            <div>${esc(f.nome)}<small>${f.diaSemana}${f.lei ? ' • ' + esc(f.lei) : ''}</small></div>
+            ${tagDe(f)}
+          </div>`).join('');
+        $('json').textContent = JSON.stringify({ ok: true, ano, ...opcoes(), total: lista.length, feriados: lista }, null, 2);
+        const prol = F.feriadosProlongados(ano, opcoes()).prolongados;
+        $('prolongados').innerHTML = prol.length ? prol.map(p => `
+          <div class="ponte-stat-box">
+            <div class="ponte-stat-label">${esc(p.feriado)}</div>
+            <div class="ponte-stat-val" style="font-size:18px;">${br(p.descanso.inicio)} → ${br(p.descanso.fim)}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">${p.tipo === 'PONTE_POSSIVEL' ? `🌉 Ponte em ${br(p.diaPonte)} → ${p.descanso.dias} dias` : `🏖️ ${p.descanso.dias} dias de descanso`}</div>
+          </div>`).join('') : '<p style="color:var(--muted)">Nenhum feriado prolongado neste ano.</p>';
+      } catch (e) {
+        $('lista').innerHTML = `<div style="color:#ef4444">${esc(e.message)}</div>`;
+      }
+    }
+
+    function consultar() {
+      try {
+        const r = F.consultarData($('data-consulta').value, { ...opcoes(), modo: $('modo-consulta').value });
+        const motivo = r.feriados.length ? r.feriados.map(f => esc(f.nome)).join(', ') : (r.fimDeSemana ? 'Fim de semana' : '');
+        $('res-consulta').innerHTML = `
+          <div class="fer-big" style="color:${r.diaUtil ? '#10b981' : '#ef4444'}">${r.diaUtil ? '✓ DIA ÚTIL' : '✗ NÃO É DIA ÚTIL'}</div>
+          ${br(r.data)} • ${r.diaSemana}${motivo ? ` • <strong>${motivo}</strong>` : ''}<br>
+          Próximo dia útil: <strong>${br(r.proximoDiaUtil)}</strong>`;
+      } catch (e) { $('res-consulta').textContent = e.message; }
+    }
+
+    function prazo() {
+      try {
+        const r = F.somarDiasUteis($('data-prazo').value, parseInt($('dias-prazo').value, 10), { ...opcoes(), modo: $('modo-prazo').value });
+        $('res-prazo').innerHTML = `
+          <div class="fer-big">${br(r.dataFinal)}</div>
+          ${r.diaSemanaFinal} • ${r.diasUteis} dias úteis = ${r.diasCorridos} dias corridos<br>
+          ${r.feriadosPulados.length ? 'Feriados pulados: ' + r.feriadosPulados.map(f => `${br(f.data)} ${esc(f.nome)}`).join('; ') : 'Nenhum feriado no período.'}`;
+      } catch (e) { $('res-prazo').textContent = e.message; }
+    }
+
+    function contar() {
+      try {
+        const r = F.contarDiasUteis($('ini-contar').value, $('fim-contar').value, opcoes());
+        $('res-contar').innerHTML = `
+          <div class="fer-big">${r.diasUteis} dias úteis</div>
+          ${r.diasCorridos} dias corridos • ${r.fimDeSemana} dias de fim de semana • ${r.feriadosEmDiasDeSemana} feriados em dias de semana`;
+      } catch (e) { $('res-contar').textContent = e.message; }
+    }
+
+    function baixarIcs() {
+      const ano = Number($('ano').value);
+      const blob = new Blob([F.gerarIcs(ano, opcoes())], { type: 'text/calendar' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `feriados-${ano}${$('uf').value ? '-' + $('uf').value.toLowerCase() : ''}.ics`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    $('ibge').addEventListener('change', () => {
+      const uf = $('ibge').selectedOptions[0]?.dataset.uf;
+      if (uf) $('uf').value = uf;
+      renderLista(); consultar(); contar();
+    });
+    $('uf').addEventListener('change', () => {
+      const sel = $('ibge').selectedOptions[0];
+      if (sel?.dataset.uf && sel.dataset.uf !== $('uf').value) $('ibge').value = '';
+      renderLista(); consultar(); contar();
+    });
+    ['ano', 'facultativos'].forEach(id => $(id).addEventListener('change', renderLista));
+    $('btn-consulta').addEventListener('click', consultar);
+    $('btn-prazo').addEventListener('click', prazo);
+    $('btn-contar').addEventListener('click', contar);
+    $('btn-ics').addEventListener('click', baixarIcs);
+
+    $('theme-toggle-btn').addEventListener('click', () => {
+      const next = (document.documentElement.getAttribute('data-theme') || 'dark') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('ponte.theme', next);
+    });
+
+    renderLista(); consultar(); prazo(); contar();
+  </script>
+</body>
+</html>

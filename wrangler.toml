@@ -1,0 +1,14 @@
+name = "feriados-pro-api"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[observability]
+enabled = true
+
+[vars]
+SERVICE_NAME = "Feriados & Dias Úteis Pro API"
+ENVIRONMENT = "production"
+GITHUB_REPO = "clepta2/feriados-pro"
+DOCS_URL = "https://github.com/clepta2/feriados-pro"
+API_VERSION = "1.0.0"
